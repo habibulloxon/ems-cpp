@@ -8,6 +8,8 @@
 
 #include <sstream>
 
+#include <algorithm>
+
 using namespace std;
 
 struct Employee {
@@ -88,6 +90,8 @@ public: int getOption() {
           cout << "Display: " << endl;
           cout << "[1] All records" << endl;
           cout << "[2] Department records" << endl;
+          cout << "[3] Sort by salary (descending)" << endl;
+          cout << "[4] Sort by salary (ascending)" << endl;
           cout << "Enter your choice: ";
           cin >> choice;
 
@@ -100,12 +104,30 @@ public: int getOption() {
               cin >> deptToSearch;
               displayEmployeesByDepartment(deptToSearch);
           }
+          else if (choice == 3) {
+              displayEmployeesBySalary(true);
+          }
+          else if (choice == 4) {
+              displayEmployeesBySalary(false);
+          }
           else {
               cout << "Invalid choice. Please try again." << endl;
           }
       }
 
 
+      void displayEmployeesBySalary(bool descending) {
+          sort(employees.begin(), employees.end(),
+              [descending](const Employee& emp1, const Employee& emp2) {
+                  return descending ? (emp1.salary > emp2.salary) : (emp1.salary < emp2.salary);
+              });
+
+          cout << "Employees sorted by salary (" << (descending ? "descending" : "ascending") << "):" << endl;
+          for (const Employee& emp : employees) {
+              cout << "  - ID: " << emp.id << ", Name: " << emp.name << ", Department: " << emp.department
+                  << ", Salary: $" << emp.salary << endl;
+          }
+      }
 
       void displayAllEmployees() {
           if (employees.empty()) {
