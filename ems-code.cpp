@@ -13,6 +13,8 @@ using namespace std;
 struct Employee {
     int id;
     string name;
+    string department;
+    int salary;
 };
 
 class EmployeeManagementSystem {
@@ -29,12 +31,38 @@ public: int getOption() {
           Employee emp;
           cout << "Enter employee ID: ";
           cin >> emp.id;
+
           cout << "Enter employee name: ";
           cin.ignore();
           getline(cin, emp.name);
+          
+          do {
+              cout << "Enter employee department: ";
+              getline(cin, emp.department);
+
+              if (emp.department.empty()) {
+                  cout << "Department cannot be empty. Please enter a department." << endl;
+              }
+          } while (emp.department.empty());
+
+          double salary;
+          do {
+              cout << "Enter employee salary (must be greater than 0): ";
+              cin >> salary;
+
+              if (salary <= 0) {
+                  cout << "Invalid salary. Salary must be a positive value." << endl;
+              }
+          } while (salary <= 0);
+
+          emp.salary = salary;
+
           employees.push_back(emp);
           cout << "Employee record added successfully!" << endl;
+          saveDataToFile();
       }
+
+
 
       void searchRecordById() {
           int id;
@@ -55,6 +83,30 @@ public: int getOption() {
           }
       }
 
+      void displayEmployees() {
+          int choice;
+          cout << "Display: " << endl;
+          cout << "[1] All records" << endl;
+          cout << "[2] Department records" << endl;
+          cout << "Enter your choice: ";
+          cin >> choice;
+
+          if (choice == 1) {
+              displayAllEmployees();
+          }
+          else if (choice == 2) {
+              string deptToSearch;
+              cout << "Enter the department to display employees (or leave empty for all departments): ";
+              cin >> deptToSearch;
+              displayEmployeesByDepartment(deptToSearch);
+          }
+          else {
+              cout << "Invalid choice. Please try again." << endl;
+          }
+      }
+
+
+
       void displayAllEmployees() {
           if (employees.empty()) {
               cout << "No employee records found." << endl;
@@ -64,7 +116,25 @@ public: int getOption() {
           for (const Employee& emp : employees) {
               cout << "ID: " << emp.id << endl;
               cout << "Name: " << emp.name << endl;
+              cout << "Department: " << emp.department << endl;
+              cout << "Salary: " << emp.salary << endl;
               cout << endl;
+          }
+      }
+
+      void displayEmployeesByDepartment(const string& department) {
+          bool found = false;
+          for (const Employee& emp : employees) {
+              if (emp.department == department) {
+                  if (!found) {
+                      cout << "Employees in department " << department << ":" << endl;
+                      found = true;
+                  }
+                  cout << "  - ID: " << emp.id << ", Name: " << emp.name << ", Salary: $" << emp.salary << endl;
+              }
+          }
+          if (!found) {
+              cout << "No employees found in department " << department << "." << endl;
           }
       }
 
@@ -80,22 +150,27 @@ public: int getOption() {
 
           while (getline(file, line)) {
               stringstream ss(line);
-              string idStr, name;
-              if (getline(ss, idStr, ',')) {
-                  int id = stoi(idStr);
-                  if (getline(ss, name)) {
-                      Employee emp{
-                        id,
-                        name
-                      };
+              string idStr, name, department;
+              double salary;
+
+              if (getline(ss, idStr, ',') && getline(ss, name, ',') && getline(ss, department, ',')) {
+                  if (ss >> salary) {
+                      Employee emp{ stoi(idStr), name, department, salary };
                       employees.push_back(emp);
                   }
+                  else {
+                      cerr << "Error: Invalid salary format in line: " << line << endl;
+                  }
+              }
+              else {
+                  cerr << "Error: Invalid data format in line: " << line << endl;
               }
           }
 
           file.close();
           cout << "Employee data loaded from file successfully!" << endl;
       }
+
 
       void saveDataToFile() {
           ofstream file("ems-data.csv");
@@ -104,10 +179,10 @@ public: int getOption() {
               return;
           }
 
-          file << "ID,Name\n";
+          file << "ID,Name,Department,Salary\n";
 
           for (const Employee& emp : employees) {
-              file << emp.id << "," << emp.name << endl;
+              file << emp.id << "," << emp.name << "," << emp.department << "," << emp.salary << endl;
           }
 
           file.close();
@@ -212,8 +287,8 @@ int main() {
     do {
         cout << endl << "******* Employee Management System *******" << endl;
         cout << "[1] => Add a new record" << endl;
-        cout << "[2] => Search record from employee id" << endl;
-        cout << "[3] => Display all employees" << endl;
+        cout << "[2] => Search record from employee ID" << endl;
+        cout << "[3] => Display employees" << endl;
         cout << "[4] => Update record of an employee" << endl;
         cout << "[5] => Delete records / delete record by ID" << endl;
         cout << "[6] => Exit from the program" << endl;
@@ -228,7 +303,7 @@ int main() {
             empSys.searchRecordById();
             break;
         case 3:
-            empSys.displayAllEmployees();
+            empSys.displayEmployees();
             break;
         case 4:
             empSys.updateRecord();
